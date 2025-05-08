@@ -12,7 +12,7 @@ to study diffusion processes in different areas and at several spatio-temporal s
 
 ## Respository Estructure
 
-DiffusionFluxModel/
+DiffusionFluxModel
 -src/ # MATLAB source code
 -data/ # Entry data
 -results/ # generated results
