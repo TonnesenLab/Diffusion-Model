@@ -13,11 +13,11 @@ to study diffusion processes in different areas and at several spatio-temporal s
 ## Respository Estructure
 
 DiffusionFluxModel
--src/ # MATLAB source code
--data/ # Entry data
--results/ # generated results
--README.md # This file
--LICENSE.txt # BSD 3 clause license
+- src/ # MATLAB source code
+- data/ # Entry data
+- results/ # generated results
+- README.md # This file
+- LICENSE.txt # BSD 3 clause license
 
 ## Rquisites
 
