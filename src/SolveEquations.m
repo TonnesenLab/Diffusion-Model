@@ -1,31 +1,12 @@
-function [lamda,dif_av,Data]=SolveEquations(op,rate,nt,dif,tp,K,SName,app,Cb,clim,NameMask)
-% SoveEquations - This function chooses the rigth solver acoording to the
-%                   user specifications
-
-% Input: op - identifier for 2D, 3D, pseudo3D or multiple release
-%               simulations
-%        rate - iteration save rate. The concentration is save after the number 
-%               of iterations indicated by the user.             
-%        nt - number of iterations
-%        dif - Free diffusion coefficient provided by the user
-%        tp - duration of the release pulse
-%        SName - file name introduced by user to save the data
-%        app - app elements
-%        Cb - basal concentraion
-%        clim - concentration threshold to display the concentration cloud.
-%        NameMask - Name and path of the SUSHI mask chosen by the user.
-
-% Output: lamda - tortuosity of the image
-%         dif_av - average diffusion coeffiecient after scaling.
-%         Data - Matrix of the concentration of each pixel at each saved
-%                   instant of time
-
+function [lamda,dif_av,Data]=SolveEquations(op,rate,nt,dif,tp,T,K,SName,app,Cb,clim,NameMask)
     C0=app.Cin;
+    f=app.DiffusionModel;
     ds2=app.ds.^2;
     S0 = app.S0;
     dt = app.dt;
     M = app.M;
     BC = app. bounds;
+    alpha=app.Alpha.Value;
     aux=app.Aux.Value;
     freq=app.freq;
     
@@ -36,22 +17,29 @@ function [lamda,dif_av,Data]=SolveEquations(op,rate,nt,dif,tp,K,SName,app,Cb,cli
         kapa=0;
         sc=0.90; %0.982
     elseif op == 2|| op == 4
-        kapa=0.0003; % clearance in z direction 
+        %kapa=15e3; % clearance in z direction kapa depends on t kapa=15e3; 
         sc=0.9; %0.982 % scape coefficient at the boundaries. 
+        kapa=375;
         C0=C0*0.2;
-
+%         if strcmp(app.ImageDropDown.Value,'Agarose.tif')==1
+%             x=app.Dif.Value * 10^-1;%dif value 10^-9 m2/s
+%             C0=C0 * (0.353 * x^(-0.101));
+%         end
     elseif  op == 3
         kapa=K;
         sc=0.7; %0.97 for Agarose.tif
     end
     
     %Load diffusion matrices
+   
     Mask=app.mask; 
     if range(Mask) ==0
         Mask=Mask.*aux;
     end
     IM2=app.IM;
     D=Mask .* dif;
+    max(max(Mask))
+    max(max(D))
     
     dif_av = mean(D(:), 'omitnan');
     lamda=sqrt(dif/dif_av);
@@ -62,7 +50,9 @@ function [lamda,dif_av,Data]=SolveEquations(op,rate,nt,dif,tp,K,SName,app,Cb,cli
     % Solve the Equation for multiple simulation
     if strcmp(app.Tab,'Multiple Simulations')==1
         MS=1; 
-        Source=xlsread([app.datafolder app.SourceDropDown.Value]);
+        alpha=app.Alpha_2.Value;
+        %IDX=xlsread(app.SourceDropDown.Value);
+        Source=xlsread(app.SourceDropDown.Value);
         i0=app.idx0.Value;
         iend=app.idxend.Value;
         fps=app.fps_2.Value;
@@ -72,6 +62,7 @@ function [lamda,dif_av,Data]=SolveEquations(op,rate,nt,dif,tp,K,SName,app,Cb,cli
             SN = sprintf('%s_%04d', SName, n);
             fname = fullfile(app.resfolder, [SN, '.mat']);
             S0=Source(n,[1,2]); % Adjust indices S0 1 = Y, 2 = X
+            %S03=[Source(n,:),5];
             
             % Solve the Diffusion Equation and save the data and video
             if op==1 || op==2 
@@ -85,7 +76,17 @@ function [lamda,dif_av,Data]=SolveEquations(op,rate,nt,dif,tp,K,SName,app,Cb,cli
                         SaveVideo(Data,NameVideo,IM2,nt,rate,dt,t,unitC,unitT,clim,Cb,fps,NameMask,MS);
                         save(fname,'Data','IM2','t');
                     end
-                end
+                 end
+    %         elseif op==3
+    %             if Mask(S0(1),S0(2),S0(3))>0
+        %             [Data]=NumericalSolver3D(M,ds2,dt,nt,D,S0(1:3),C0,kapa,tp,T,rate,f,alpha,CMAX,sc,Mask,Cb);
+        %             save(fname,'Data','t','-v7.3'); 
+
+    %                 Data3D1=squeeze(Data(:,:,round(M(3)/2),:));
+    %                 NameVideo1=fullfile(app.resfolder, [SN, '_z2.avi']);
+    %                 SaveVideo(Data3D1,NameVideo1,IM2,nt,rate,dt,t,unitC,unitT,clim,Cb,fps,NameMask,MS);    
+    %                 save(fname,'Data','IM2','t','-v7.3');
+    %             end
             end
         end
         
@@ -95,18 +96,14 @@ function [lamda,dif_av,Data]=SolveEquations(op,rate,nt,dif,tp,K,SName,app,Cb,cli
         fname=[app.resfolder,SN,'.mat'];
 
         if op==1 || op==2
-            if size(D,3)>1
-                D_new=D(:,:,round(size(D,3)/2));
-            else
-                D_new=D;
-            end
-            [Data]=NumericalSolver2D(M,ds2,dt,nt,D_new,S0(1:2),C0,kapa,tp,rate,sc,Mask,Cb, BC);
+            
+            [Data]=NumericalSolver2D(M,ds2,dt,nt,D,S0(1:2),C0,kapa,tp,rate,sc,Mask,Cb, BC);
             save(fname,'Data','t','-v7.3');
         elseif op==3
-            [Data]=NumericalSolver3D(M,ds2,dt,nt,D,S0(1:3),C0,kapa,tp,rate,sc,Mask,Cb);
+            [Data]=NumericalSolver3D(M,ds2,dt,nt,D,S0(1:3),C0,kapa,tp,T,rate,f,alpha,sc,Mask,Cb, BC);
             save(fname,'Data','t','-v7.3');
         elseif op==4
-            Source_file=[app.datafolder 'Source_GABArelease.mat'];
+            Source_file='Source_GABArelease_ROI1.mat';
             [Data]=NumericalSolver2D_multiple(M,ds2,dt,nt,D,Source_file,C0,kapa,tp,rate,sc,Mask,Cb, BC,freq);
             save(fname,'Data','t','-v7.3');
         end

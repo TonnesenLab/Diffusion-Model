@@ -1,27 +1,4 @@
-function [P,Label]=DiffAnalysis(op,file,molec,model,ds,M,S0,U,UT,RTI,radius,ax,NumAnalysis,fit,datafolder, resfolder)
-% DiffAnalysis - This function includes different analysis of the
-% difussion simulations including: Display of diffusion curves and comparison to published data, comparison
-% between molecules or models
-% Input: op - identifier of type of analysis
-%        file - simulation file name
-%        molec - type of molecules
-%        model - type of model 2D, 3D, psuedo 3D
-%        ds - pixel size 
-%        M - Image size
-%        S0 - release site
-%        U - desired concentration units
-%        UT - desired time units
-%        RTI - identifiers of the published data to be displayed with the concentration profiles
-%        radius - distance from release site where concentration is
-%                   measuered
-%        ax - figure axis
-%        NumAnalysis - when comparing molecules if indicates the number of
-%                   analysis. 
-%        fit - binary value (1,0) . If 1 it fits the empirical diffusion
-%                   equation to each diffusion curved measured to calculate de
-%                   tortuosity and the volume fraction.
-%        datafolder - path for data files that are required
-%        redfolder - path where the resulting data is stored. 
+function [P,Label]=DiffAnalysis(op,file,molec,model,ds,M,S0,U,UT,RTI,radius,ax,NumAnalysis,fit)
 
     [color, MOLEC] = colorcodefunction (model, molec);
     
@@ -55,10 +32,6 @@ function [P,Label]=DiffAnalysis(op,file,molec,model,ds,M,S0,U,UT,RTI,radius,ax,N
     MPnew = MP(valid_indices, :);
     anglesnew = angles(valid_indices);
     anglesnew = rad2deg(anglesnew);
-    ALPHA=zeros(length(MPnew),1);
-    LAMDA=zeros(length(MPnew),1);
-    KAPA=zeros(length(MPnew),1);
-    R=zeros(length(MPnew),1);
     for i = 1:size(MPnew,1)
         if strcmp(model,'3D')==1
             Ytotal(:,i) = squeeze(Y(MPnew(i,1),MPnew(i,2),MPnew(i,3),:));
@@ -77,14 +50,10 @@ function [P,Label]=DiffAnalysis(op,file,molec,model,ds,M,S0,U,UT,RTI,radius,ax,N
             Imax(:,i)=idx;
 
         end
-        
         if fit ==1
             x=t';
-            [~,index] = min(abs(x-50));
-            [fitresult, gof] = createFit(x(2:index), Ytotal(2:index,i));
-            ALPHA(i)=fitresult.a;
-            LAMDA(i)=fitresult.l;
-            KAPA(i)=fitresult.k;
+%             [~,index] = min(abs(x-50));
+            [fitresult, gof] = createFit_decay(x(idx:end), Ytotal(idx:end,i));
             R(i)=gof.rsquare;
         end
     end
@@ -92,9 +61,9 @@ function [P,Label]=DiffAnalysis(op,file,molec,model,ds,M,S0,U,UT,RTI,radius,ax,N
    
     % Save data
     if fit == 1
-        save([resfolder 'diffcurves_analysis.mat'],'MPnew','MP','t','Ytotal','anglesnew','ALPHA','LAMDA','KAPA','R');
+        save('diffcurve.mat','MPnew','MP','t','Ytotal','anglesnew','Ytotal_max','Tmax','Imax');
     else
-        save([resfolder 'diffcurves_analysis.mat'],'MPnew','MP','t','Ytotal','anglesnew','Ytotal_max','Tmax','Imax');
+        save('diffcurve.mat','MPnew','MP','t','Ytotal','anglesnew','Ytotal_max','Tmax','Imax');
     end
 
     % OP == 2 display diffusion curves
@@ -144,21 +113,20 @@ function [P,Label]=DiffAnalysis(op,file,molec,model,ds,M,S0,U,UT,RTI,radius,ax,N
     fileNames123 = {'AgaroseData.xlsx', 'BrainData.xlsx','highestC.xlsx','lowestC.xlsx'};
     fileNames456 = {'Agar.txt', 'dex70K.txt', 'dex3K.txt', 'BSA.txt'};
     count=0;
-
+    
     for i=1:6
         if RTI(i)==1
             titlestr1 = Titles{i};
-            if i== 1 || i== 2
-                C=xlsread([datafolder fileNames123{i}]);
+            if RTI(i)== 1 || RTI(i)== 2
+                C=xlsread(fileNames123{i});
                 C(:,1)=C(:,1)-10;
                 RTIlabel={str,LabelsRTI123{i}};
                 ax.XLim=[0 140];
                 ax.YLim=[0 1];
                 idx=i+1;
-            elseif i== 3
-                C1 = xlsread([datafolder fileNames123{i}]);
-                C2 = xlsread([datafolder fileNames123{i+1}]);
-                
+            elseif RTI(i)== 3
+                C1 = xlsread(fileNames123{i});
+                C2 = xlsread(fileNames123{i+1});
                 fun=fit(C2(:,1),C2(:,2),'smoothingspline');
                 Cfit2=fun(C1(:,1));
                 C(:,1)=C1(:,1);
@@ -168,7 +136,7 @@ function [P,Label]=DiffAnalysis(op,file,molec,model,ds,M,S0,U,UT,RTI,radius,ax,N
                 ax.XLim=[0 200];
                 ax.YLim=[0 2];
                 idx=i+1;
-            elseif i== 4 || i== 5 || i== 6
+            elseif RTI(i)== 4 || RTI(i)== 5 || RTI(i)== 6
                 fileID = fopen(fileNames456{MOLEC},'r');
                 sizeC = [2 Inf];
                 C=fscanf(fileID,'%f %f',sizeC)';

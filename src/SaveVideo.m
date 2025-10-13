@@ -1,31 +1,12 @@
+%%% Create Video and save it %%%
 function SaveVideo(Data,NameVideo,ECS,nt,rate,dt,originalTime,unitC,unitT,clim,Cbasal,fps,NameMask,MS)
-% SaveVideo - This function creates a video of the diffusion over time and saves it
-
-% Input: Data - Concentration for each pixel at each saved timepoint
-%        NameVideo - Name of the video to be saved              
-%        ECS - SUSHI Image to be use as background for the concentration. 
-%        nt - number of iterations
-%        rate - iteration save rate. The concentration is save after the 
-%               number of iterations indicated by the user.
-%        dt - time step
-%        originalTime - saved timepoints
-%
-%        S0 - release site
-%        Q - magnitude of the source 
-%        kapa - Clearance due to uptake or diffusion in z
-%        tp - duration of the release pulse
-
-%        sc - scape coefficient at the edges of the image to account for
-%        Mask - mask sushi image
-%        Cb - basal concentraion
-%        BC - binary value that indicates toroidal (0) or scape (1) boundary
-%               conditions
 
     % Define scaling factors for time and concentration units
     scale=convertFromSIunit(unitC);
     scaleT=convertFromSIunit(unitT);
     
-    % Convert basal concentration units from uM to mM amd then to desired units
+    % Convert basal concentration units from uM to mM amd then to desired
+    % units
     Cb=Cbasal*10^-3*scale; 
 
     % Determine transparency limit
@@ -38,10 +19,13 @@ function SaveVideo(Data,NameVideo,ECS,nt,rate,dt,originalTime,unitC,unitT,clim,C
     idx = (1:round(size(Data,3)/step):size(Data,3));
     r = double((max(t) < 10));
     T=numel(originalTime);
-    idx2 = [2, round(0.33 * T), round(0.66 * T), T];
+    %idx2 = [2, round(0.33 * T), round(0.66 * T), T];
     %idx2 = [2, ceil(0.25 * T)+1, ceil(0.5 * T)+1, ceil(0.75 *T), T];
     %idx2 = [2, round(0.2 * T)+1, round(0.4 * T)+1, round(0.6 * T)+1, round(0.8 *T)+1, T];
-
+    %idx2 = [21, 521]; %COV_1
+    %idx2 = [5, 76,151,226]; 
+    %idx2 = [2, 189,376,564]; 
+    idx2 = [2, 201,401,601];% 0, 4, 8, 12 ms
     if strcmp(NameMask,'Agarose.tif')==1
         cl='white';
 
@@ -95,7 +79,6 @@ function SaveVideo(Data,NameVideo,ECS,nt,rate,dt,originalTime,unitC,unitT,clim,C
         writeVideo(writerObj, getframe(gcf)); 
     end
     close(gcf);
-    
     % Save image montage if MS is 0
     if MS == 0
         for i = idx2

@@ -1,12 +1,4 @@
 function [alpha,IM2,Mask]=LoadImage(app)
-% LoadImage - This function loads the chosen image by the user with the
-%               specified dimensions. It also displays the image
-% Input: app - the app files
-% Output: alpha - estimates the volume fraction of that image
-%         IM2 - Image adjusted to the chosen size. 
-%         Mask - Mask Image (grayscale) adjusted to the chosen size. The
-%                   pixel values of the Mask determine the probability of diffusion. 
-
     Tab=app.Tab;
     aux=app.Aux.Value;
     
@@ -20,7 +12,7 @@ function [alpha,IM2,Mask]=LoadImage(app)
     else
         Idx = [app.idx1.Value, app.idx2.Value];
         if app.op ==4
-            load([app.datafolder 'Source_GABArelease.mat']);
+            load('Source_GABArelease_ROI1.mat');
             S0(:,1)=SourceY;
             S0(:,2)=SourceX;
         else
@@ -48,6 +40,7 @@ function [alpha,IM2,Mask]=LoadImage(app)
             IM2=IM(Idx(1):Idx(1)+dim(1),Idx(2):Idx(2)+dim(2),:); 
         else
             IM2=IM(Idx(1):Idx(1)+dim(1),Idx(2):Idx(2)+dim(2));
+            
         end
         Mask=Mask0(Idx(1):Idx(1)+dim(1),Idx(2):Idx(2)+dim(2));
         %image(Mask,'CDataMapping','scaled');
@@ -62,7 +55,7 @@ function [alpha,IM2,Mask]=LoadImage(app)
     alpha= count_ECS / total;
 
     if strcmp(Tab,'Multiple Simulations')==1
-        Sources=xlsread([app.datafolder app.SourceDropDown.Value]);% Y=Sources(:,1), X=Sources(:,2)
+        Sources=xlsread(app.SourceDropDown.Value);% Y=Sources(:,1), X=Sources(:,2)
         app.Ax3.XTick=[];
         app.Ax3.YTick=[];
         image(app.Ax3,IM2,'CDataMapping','scaled');

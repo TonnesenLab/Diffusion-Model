@@ -1,12 +1,4 @@
 function [color,MOLEC] = colorcodefunction (model, molec)
-% colorcodefunction - This fuctions assigns a color for different molecules
-% and model dimension so that when comparing the molecules it asigns always
-% the same color to a given molecule. 
-%Inputs: model - 2D, 3D or pseudo3D simulation
-%        molec - TMA dex70K dex3K BSA GLUT
-%Outputs: color - A color matrix
-%         MOLEC - the idenfifier of each molecule. 
-
     % Set legend color based on molecule and model
     colorMatrix = [1, 0.4, 0.4; 1, 0.4, 0.4; 1, 0.4, 0;...
         0, 0.8, 0.6; 0.2, 0.6, 0.6; 0, 0.4, 0.6; ...

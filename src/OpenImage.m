@@ -1,12 +1,5 @@
-function [Mask0,zstack]=OpenImage(NameMask,aux)
-% OpenImage - This function reads the chosen sushi mask into a matrix and
-%               transforms it into a 0-1 scale matrix
-% Input: NameMask - Name and path of sushi mask
-%        aux - scale value for homogeniezed field of view
 
-% Output: Mask0 - Sushi Mask from 0-1 
-%         zstack - binary value indicate if the image is a z-stack (1) or just
-%               a single plane (0). 
+function [Mask0,zstack]=OpenImage(NameMask,aux)
 
     Info=imfinfo(NameMask);
     NumberImages=length(Info);
@@ -23,5 +16,6 @@ function [Mask0,zstack]=OpenImage(NameMask,aux)
         C=imread(NameMask);
         MaxPixelVal= max(C(:));
     end
-    Mask0 = (double(C) .* aux) ./ double(MaxPixelVal);   
+    Mask0 = (double(C) .* aux) ./ double(MaxPixelVal);
+    
 end

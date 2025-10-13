@@ -1,8 +1,6 @@
+%% Restart function
+
 function []=defaultconfiguration(app)
-% defaultconfiguration - This function sets the default configuration of
-% the Diffusion Model App.
-
-
     % Clear XTick and YTick for Ax2 and Ax3
     app.Ax2.XTick=[];
     app.Ax2.YTick=[];
@@ -18,7 +16,7 @@ function []=defaultconfiguration(app)
     files = dir(fullfile(app.imfolder, '*.tif'));
     ListItems = {files.name};
 
-    files2 = dir(fullfile(app.datafolder, '*.xlsx'));
+    files2 = dir(fullfile(app.mainfolder, '*.xlsx'));
     Sourcefiles = {files2.name};
     
     % Update dropdown items

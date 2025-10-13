@@ -1,29 +1,6 @@
 %%% NUMERICAL METHOD TO SOLVE THE 2D Diffusion Equation for multiple release points at the same time %%% 
 function [C_store]=NumericalSolver2D_multiple(M,ds2,dt,nt,Diff,Source_file,Q,kapa,tp,rate,sc,Mask,Cb, BC,freq)
-% NumericalSolver2D_multiple - This function solves in Psuedo3D the diffusion
-%                      equation using forward euler method when there are
-%                      multiple release sites
-% Input: M - Image size
-%        ds2 - pixel size squared                 
-%        dt - time step for the iterations
-%        nt - number of iterations
-%        Diff - Diffusion matrix where the free diffusion coefficient is scaled 
-%               by the diffusion probability for each pixel.
-%        Source_file - file with all the release sites
-%        Q - magnitude of the source 
-%        kapa - Clearance due to uptake or diffusion in z
-%        tp - duration of the release pulse
-%        rate - iteration save rate. The concentration is save after the number of iterations indicated by the user.
-%        sc - scape coefficient at the edges of the image to account for
-%        Mask - mask sushi image
-%        Cb - basal concentraion
-%        BC - binary value that indicates toroidal (0) or scape (1) boundary
-%               conditions
-%        freq - frequency of release in Hz
-% Output: C_store - Matrix of the concentration of each pixel at each saved
-%                   instant of time 
-
-tic
+    tic
     %Extract source coordinates
     Mx=M(2);
     My=M(1);
@@ -33,9 +10,9 @@ tic
     load(Source_file);
     conjunto_indices = sub2ind([My, Mx], SourceY, SourceX);
     
-    %Posibility of uptake
-    %load('GABA_uptake_points2.mat');
+    load('GABA_uptake_points2.mat');
     %uptake_indices = sub2ind([My, Mx], SourceY, SourceX);
+    
  
     aux=1;
     pareja_indice=zeros(Mx*My,1);
@@ -45,8 +22,8 @@ tic
             aux=aux+1;
         end
     end
-    
     %is_uptake=ismember(pareja_indice, uptake_indices);
+    
     is_release=ismember(pareja_indice, conjunto_indices);
 
     %Initialize variables
@@ -56,13 +33,14 @@ tic
     D=Diff;
     C_old(D>0)=Cb; % concentration in mM;
     C_store=zeros(My,Mx,round(nt/rate));
-
+    AUX =(D~= 0);
     %kapa=kapa * dt;
     %Q = (Q /(alpha * dt)); % concentration in mM;
     Q1 = (Q / dt); % To compare with Rohishas data
     U =(Q1/10^4)*6; % uptake rate = 6 molecules / 100 ms
     k_freq=0;
     k_freq2=floor((1/freq)/dt);
+    
     kup_freq=3000; % GABA uptake delay = 3 ms
     freq_up=10; %10 Hz
     kup_freq2=kup_freq+floor((1/freq_up)/dt); % 1 event every 0.1 s = 100 ms
@@ -104,6 +82,7 @@ tic
             loopvalues_j = (1:Mx);
         end
         
+
         % Space loop for CS euler method
         for i=loopvalues_i
             for j=loopvalues_j
@@ -114,9 +93,10 @@ tic
                 end
 
                 % Apply source  and uptake at specific locations 
+                
                 S = Q * is_release(aux);
-                C_up = 0;  %No uptake
-                %C_up = uptake * is_uptake(aux); % Posibility of uptake
+                C_up = 0; % No uptake
+                %C_up = uptake * is_uptake(aux);
                 if BC == 0
                     % Calculate Cy  
                     if i == 1
@@ -167,6 +147,7 @@ tic
                 if C(i,j)<0
                     C(i,j)=0;
                 end
+
             end
         end
         
@@ -177,7 +158,8 @@ tic
         if k==1 || rem(k,rate)==0
             C_store(:,:,count)= C(1:My,1:Mx);
             count=count+1
-        end 
+        end
+        
     end
-toc
+    toc
 end

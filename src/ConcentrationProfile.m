@@ -1,16 +1,4 @@
 function ConcentrationProfile(file,molec,model,dx,Mx,S0,U,UT,Cb)
-% ConcentrationProfile - This function generates a 2D mesh of the
-% concentration (colorcode) over time (Y) and space(X)
-%Input: file - concentration cloud file name
-%       molec - name of the molecule simulated
-%       model - 2D, 3D or pseudo 3D
-%       dx - pixel size (in x)
-%       Mx - matrix size in x
-%       S0 - release site
-%       U - desired concentration units
-%       UT - desired time units
-%       Cb - value of basal concentration
-% Output: a figure with the concentration profile over time and space
 
     % Transform units from SI to desired ones
     scaleC = convertFromSIunit(U);

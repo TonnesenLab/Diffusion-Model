@@ -1,26 +1,5 @@
+%%% NUMERICAL METHOD TO SOLVE THE 2D Diffusion Equation %%% 
 function [C_store]=NumericalSolver2D(M,ds2,dt,nt,Diff,S0,Q,kapa,tp,rate,sc,Mask,Cb, BC)
-% NumericalSolver2D - This function solves in 2D and Psuedo3D the diffusion
-%                      equation using forward euler method.
-% Input: M - Image size
-%        ds2 - pixel size squared                 
-%        dt - time step for the iterations
-%        nt - number of iterations
-%        Diff - Diffusion matrix where the free diffusion coefficient is scaled 
-%               by the diffusion probability for each pixel.
-%        S0 - release site
-%        Q - magnitude of the source 
-%        kapa - Clearance due to uptake or diffusion in z
-%        tp - duration of the release pulse
-%        rate - iteration save rate. The concentration is save after the number of iterations indicated by the user.
-%        sc - scape coefficient at the edges of the image to account for
-%        Mask - mask sushi image
-%        Cb - basal concentraion
-%        BC - binary value that indicates toroidal (0) or scape (1) boundary
-%               conditions
-% Output: C_store - Matrix of the concentration of each pixel at each saved
-%                   instant of time
-
- 
     %Extract source coordinates
     Sy=S0(1);
     Sx=S0(2);
@@ -28,26 +7,41 @@ function [C_store]=NumericalSolver2D(M,ds2,dt,nt,Diff,S0,Q,kapa,tp,rate,sc,Mask,
     My=M(1);
     dy2=ds2(1);
     dx2=ds2(2);
+    dy=sqrt(dy2);
+    dx=sqrt(dx2);
 
     %Initialize variables
     count=1;
     C=zeros(My,Mx);
     C_old=C;
     D=Diff;
- 
     C_old(D>0)=Cb; % concentration in mM;
     C_store=zeros(My,Mx,round(nt/rate));
-    %kapa=kapa * dt;
+    
     %Q = (Q /(alpha * dt)); % concentration in mM;
     Q = (Q / dt); % To compare with Rohishas data
-    tic
     
+
+    tic
+    KAPA=0;
+    Ksave=0;
+    kapa=kapa * dt;
+    kapa_min=kapa*(50e3*dt); %(1.4e19*dt*dy*dx); 
+
+
+
     % Time Loop for FT euler method
     for k=1:nt
         
+        %scale kapa with time
+        KAPA=kapa*exp(-6000*k*dt)+kapa_min;
+        
+       %CTE Kapa
+       %KAPA=kapa;
+
         % Apply source condition
         if k <= floor(tp/dt)
-            Q = Q; 
+            Q= Q; 
         else
             Q=0;
         end
@@ -65,7 +59,6 @@ function [C_store]=NumericalSolver2D(M,ds2,dt,nt,Diff,S0,Q,kapa,tp,rate,sc,Mask,
             loopvalues_j = (1:Mx);
         end
 
-
         % Space loop for CS euler method
         for i=loopvalues_i
             for j=loopvalues_j
@@ -82,16 +75,26 @@ function [C_store]=NumericalSolver2D(M,ds2,dt,nt,Diff,S0,Q,kapa,tp,rate,sc,Mask,
                     Dmean1 = (D(i+1,j) + D(i,j)) / 2 * (D(i+1,j) ~= 0);
                     Dmean2 = (D(My,j) + D(i,j)) / 2 * (D(My,j) ~= 0);
                     Cy = (Dmean1*(C_old(i + 1, j)-C_old(i, j)) + Dmean2*(C_old(My, j)-C_old(i, j))) / dy2;
+                    % Clearance coefficient depends on time
+%                     if C_old(i,j)>0
+%                         KAPAy=kapa*(abs(C_old(i + 1, j)-C_old(i, j)))/C_old(i, j);
+%                     end
                     
                 elseif i == My
                     Dmean4 = (D(1,j) + D(i,j)) / 2 * (D(1,j) ~= 0);
                     Dmean3 = (D(i-1,j) + D(i,j)) / 2 * (D(i-1,j) ~= 0);
                     Cy = (Dmean4*(C_old(1, j)-C_old(i, j)) + Dmean3*(C_old(i - 1, j)-C_old(i, j))) / dy2;
+%                     if C_old(i,j)>0
+%                         KAPAy=kapa*(abs(C_old(1, j)-C_old(i, j)))/C_old(i, j);
+%                     end
                     
                 else
                     Dmean1 = (D(i+1,j) + D(i,j)) / 2 * (D(i+1,j) ~= 0);
                     Dmean3 = (D(i-1,j) + D(i,j)) / 2 * (D(i-1,j) ~= 0);                   
                     Cy = (Dmean1*(C_old(i + 1, j)-C_old(i, j)) + Dmean3*(C_old(i - 1, j)-C_old(i, j))) / dy2;
+%                     if C_old(i,j)>0
+%                         KAPAy=kapa*(abs(C_old(i + 1, j)+C_old(i - 1, j)-2*C_old(i, j)))/C_old(i, j);
+%                     end
                 end
                 
                 % Calculate Cx 
@@ -100,21 +103,37 @@ function [C_store]=NumericalSolver2D(M,ds2,dt,nt,Diff,S0,Q,kapa,tp,rate,sc,Mask,
                     Dmean5 = (D(i,Mx) + D(i,j)) / 2 * (D(i,Mx) ~= 0);
                     Dmean6 = (D(i,j+1) + D(i,j)) / 2 * (D(i,j+1) ~= 0);
                     Cx = (Dmean5*(C_old(i, Mx)- C_old(i, j)) + Dmean6*(C_old(i, j + 1) - C_old(i, j))) / dx2;
+%                     if C_old(i,j)>0
+%                         KAPAx=kapa*(abs(C_old(i,Mx)-C_old(i, j)))/C_old(i, j);
+%                     end
                     
                 elseif j == Mx
                     Dmean8 = (D(i,1) + D(i,j)) / 2 * (D(i,1) ~= 0);
                     Dmean7 = (D(i,j-1) + D(i,j)) / 2 * (D(i,j-1) ~= 0);
                     Cx = (Dmean7*(C_old(i, j - 1)- C_old(i, j)) + Dmean8*(C_old(i, 1) - C_old(i, j))) / dx2;
+%                     if C_old(i,j)>0
+%                         KAPAx=kapa*(abs(C_old(i, j-1)-C_old(i, j)))/C_old(i, j);
+%                     end
                     
                 else
                     Dmean6 = (D(i,j+1) + D(i,j)) / 2 * (D(i,j+1) ~= 0);
                     Dmean7 = (D(i,j-1) + D(i,j)) / 2 * (D(i,j-1) ~= 0);
                     Cx = (Dmean7*(C_old(i, j - 1)- C_old(i, j)) + Dmean6*(C_old(i, j + 1) - C_old(i, j))) / dx2;
+%                     if C_old(i,j)>0
+%                         KAPAx=kapa*(abs(C_old(i, j-1)+C_old(i, j+1)-2*C_old(i, j)))/C_old(i, j);
+%                     end
                 end
-                
+           
                 % Calculate new concentration
-                C(i,j)=(Cx+Cy)*dt+S*dt+(1-kapa*Mask(i,j))*C_old(i, j);
+                
+               
+                %C(i,j)=(Cx+Cy)*dt+S*dt+(1-KAPA)*C_old(i, j);
+                
+                C(i,j)=(Cx+Cy)*dt+S*dt+(1-KAPA*Mask(i,j))*C_old(i, j);
                 % C(i,j)=(Cx+Cy)*dt+S*dt+(1-kapa)*C_old(i, j);
+                if i==200 && j==80
+                    Ksave=KAPA;
+                end
 
             end
         end
@@ -125,9 +144,14 @@ function [C_store]=NumericalSolver2D(M,ds2,dt,nt,Diff,S0,Q,kapa,tp,rate,sc,Mask,
         %Save data if it's the first iteration or rate-th iteration
         if k==1 || rem(k,rate)==0
             C_store(:,:,count)= C(1:My,1:Mx);
-            count=count+1
+            K_store(count)=Ksave;
+            count=count+1;
+            
+
         end
         
     end
+    save('Kapa.mat', 'K_store');
+
     toc
 end
