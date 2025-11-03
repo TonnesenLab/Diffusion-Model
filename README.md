@@ -36,13 +36,5 @@ This project holds under the BSD 3-Clause license. For more information check
 the LICENSE.txt file
 
 ## Recomended Citing
-Si usas este código, por favor cita el siguiente artículo:
-
-scss
-Copiar
-Editar
-Apellido, N. (202X). Título del artículo. *Nombre de la revista*, volumen(número), páginas. DOI.
-? Enlace al código
-Repositorio en GitHub: https://github.com/usuario/repositorio
-
-DOI Zenodo (si aplica): https://doi.org/xxx
+If you use this code, please cite 
+https://www.biorxiv.org/content/10.1101/2025.10.29.685288v1
